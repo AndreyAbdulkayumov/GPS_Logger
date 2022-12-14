@@ -1,0 +1,13 @@
+# eclipse specific git ignore
+GPS_Logger_Project/.metadata/
+GPS_Logger_Project/GPS_Logger/.settings/
+GPS_Logger_Project/GPS_Logger/Debug/
+GPS_Logger_Project/GPS_Logger/Release/
+GPS_Logger_Project/GPS_Logger/*.launch
+
+# STM32 git ignore
+GPS_Logger_Project/GPS_Logger/Drivers
+GPS_Logger_Project/GPS_Logger/Debug/.mxproject
+
+
+
