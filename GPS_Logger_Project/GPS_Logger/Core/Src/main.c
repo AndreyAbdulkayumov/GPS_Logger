@@ -23,7 +23,7 @@
 /* USER CODE BEGIN Includes */
 #include "ILI9341.h"
 #include "XPT2046.h"
-
+#include "NEO_6M.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -43,6 +43,8 @@
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi2;
 
+UART_HandleTypeDef huart4;
+
 SRAM_HandleTypeDef hsram1;
 
 /* USER CODE BEGIN PV */
@@ -54,6 +56,7 @@ void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_SPI2_Init(void);
+static void MX_UART4_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -93,6 +96,7 @@ int main(void)
   MX_GPIO_Init();
   MX_FSMC_Init();
   MX_SPI2_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
 
   DisplayOrientation Orint = Landscape;
@@ -100,13 +104,19 @@ int main(void)
   Display_Backlight_On(GPIOB, GPIO_PIN_1);
 
   TouchDriver_Init(&hspi2, GPIOB, GPIO_PIN_12);
-/*
-  uint16_t X_val, Y_val;
 
-  X_val = TouchDriver_GetTouch_Axis(X);
-  Y_val = TouchDriver_GetTouch_Axis(Y);
-*/
+  GPS_Module_Init(&huart4);
+
+
+
   Display_FillScreen(BLACK);
+
+  /*
+    uint16_t X_val, Y_val;
+
+    X_val = TouchDriver_GetTouch_Axis(X);
+    Y_val = TouchDriver_GetTouch_Axis(Y);
+  */
 
   if (Orint == Portrait)
   {
@@ -124,7 +134,9 @@ int main(void)
   Display_DrawLine_Horizontal(100, 150, 100, GREEN);
 
 
-  Display_Write_String(100, 80, "ver. 0.1.0", BLACK, GREEN, 2);
+  Display_Write_String(100, 80, "ver. 0.2.0", BLACK, GREEN, 2);
+
+  GPS_Module_StartReceive();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -222,6 +234,39 @@ static void MX_SPI2_Init(void)
 }
 
 /**
+  * @brief UART4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_UART4_Init(void)
+{
+
+  /* USER CODE BEGIN UART4_Init 0 */
+
+  /* USER CODE END UART4_Init 0 */
+
+  /* USER CODE BEGIN UART4_Init 1 */
+
+  /* USER CODE END UART4_Init 1 */
+  huart4.Instance = UART4;
+  huart4.Init.BaudRate = 9600;
+  huart4.Init.WordLength = UART_WORDLENGTH_8B;
+  huart4.Init.StopBits = UART_STOPBITS_1;
+  huart4.Init.Parity = UART_PARITY_NONE;
+  huart4.Init.Mode = UART_MODE_TX_RX;
+  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN UART4_Init 2 */
+
+  /* USER CODE END UART4_Init 2 */
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -232,6 +277,7 @@ static void MX_GPIO_Init(void)
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
