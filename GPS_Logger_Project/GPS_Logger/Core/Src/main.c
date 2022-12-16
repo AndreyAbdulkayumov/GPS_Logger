@@ -18,12 +18,14 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "ILI9341.h"
 #include "XPT2046.h"
 #include "NEO_6M.h"
+#include "Logging.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -41,6 +43,8 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+SD_HandleTypeDef hsd;
+
 SPI_HandleTypeDef hspi2;
 
 UART_HandleTypeDef huart4;
@@ -57,6 +61,7 @@ static void MX_GPIO_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_UART4_Init(void);
+static void MX_SDIO_SD_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -97,6 +102,8 @@ int main(void)
   MX_FSMC_Init();
   MX_SPI2_Init();
   MX_UART4_Init();
+  MX_SDIO_SD_Init();
+  MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
   DisplayOrientation Orint = Landscape;
@@ -105,14 +112,23 @@ int main(void)
 
   TouchDriver_Init(&hspi2, GPIOB, GPIO_PIN_12);
 
-  GPS_Module_Init(&huart4);
-
-
 
   Display_FillScreen(BLACK);
 
+
+  if (Logging_Init(SD_Card, "GPS.txt") != Logging_OK)
+  {
+	  Display_Write_String(100, 40, "Log not init", BLACK, GREEN, 2);
+	  GPS_Module_Init(&huart4, NULL);
+  }
+
+  else
+  {
+	  GPS_Module_Init(&huart4, Logging_WriteLog);
+  }
+
   /*
-    uint16_t X_val, Y_val;
+    uint16_t X_val, Y_val
 
     X_val = TouchDriver_GetTouch_Axis(X);
     Y_val = TouchDriver_GetTouch_Axis(Y);
@@ -134,7 +150,7 @@ int main(void)
   Display_DrawLine_Horizontal(100, 150, 100, GREEN);
 
 
-  Display_Write_String(100, 80, "ver. 0.2.0", BLACK, GREEN, 2);
+  Display_Write_String(100, 80, "ver. 0.3.0", BLACK, GREEN, 2);
 
   GPS_Module_StartReceive();
   /* USER CODE END 2 */
@@ -174,7 +190,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
+  RCC_OscInitStruct.PLL.PLLQ = 7;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -193,6 +209,34 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+}
+
+/**
+  * @brief SDIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_SDIO_SD_Init(void)
+{
+
+  /* USER CODE BEGIN SDIO_Init 0 */
+
+  /* USER CODE END SDIO_Init 0 */
+
+  /* USER CODE BEGIN SDIO_Init 1 */
+
+  /* USER CODE END SDIO_Init 1 */
+  hsd.Instance = SDIO;
+  hsd.Init.ClockEdge = SDIO_CLOCK_EDGE_RISING;
+  hsd.Init.ClockBypass = SDIO_CLOCK_BYPASS_DISABLE;
+  hsd.Init.ClockPowerSave = SDIO_CLOCK_POWER_SAVE_DISABLE;
+  hsd.Init.BusWide = SDIO_BUS_WIDE_1B;
+  hsd.Init.HardwareFlowControl = SDIO_HARDWARE_FLOW_CONTROL_DISABLE;
+  hsd.Init.ClockDiv = 22;
+  /* USER CODE BEGIN SDIO_Init 2 */
+
+  /* USER CODE END SDIO_Init 2 */
+
 }
 
 /**
@@ -281,6 +325,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
   __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, ILI9341_Backlight_Control_Pin|Touch_Controller_CS_Pin, GPIO_PIN_RESET);

@@ -5,7 +5,7 @@ UART_HandleTypeDef* UART_Module = NULL;
 uint8_t DataFrom_GPS_Module = 0;
 
 uint16_t BufferIndex = 0;
-uint8_t DataFromGPS[500];
+char DataFromGPS[500];
 
 uint8_t Is_Line_ID_Part = 0;
 
@@ -23,10 +23,16 @@ uint8_t LineLengthCounter = 0;
 
 uint8_t IsLastLine = 0;
 
+Logging_Status (*Action) (char* String, uint32_t StringSize);
 
-void GPS_Module_Init(UART_HandleTypeDef* Selected_UART_Module)
+void GPS_Module_Init(
+		UART_HandleTypeDef* Selected_UART_Module,
+		Logging_Status (*CallbackAction) (char* String, uint32_t StringSize)
+		)
 {
 	UART_Module = Selected_UART_Module;
+
+	Action = CallbackAction;
 }
 
 
@@ -104,6 +110,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 		if (IsLastLine > 0 && DataFrom_GPS_Module == '\n')
 		{
+			if (Action != NULL)
+			{
+				Action(DataFromGPS, BufferIndex);
+			}
+
 			for (uint16_t i = 0; i < BufferIndex; i++)
 			{
 				DataFromGPS[i] = 0;
