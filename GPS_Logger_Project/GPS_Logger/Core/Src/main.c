@@ -116,6 +116,8 @@ int main(void)
   Display_FillScreen(BLACK);
 
 
+  Display_Write_String(200, 100, "12345", BLACK, GREEN, 1);
+
   if (Logging_Init(SD_Card, "GPS.txt") != Logging_OK)
   {
 	  Display_Write_String(100, 40, "Log not init", BLACK, GREEN, 2);
@@ -136,13 +138,14 @@ int main(void)
 
   if (Orint == Portrait)
   {
-	  Display_DrawPixel(0, 0, RED);
+	  //Display_DrawPixel(0, 0, RED);
+	  Display_DrawFillPixel(5, 5, 5, RED);
 	  Display_DrawPixel(239, 319, YELLOW);
   }
 
   else
   {
-	  Display_DrawFillPixel(100, 100, 5, RED);
+	  Display_DrawFillPixel(0, 5, 5, RED);
 	  Display_DrawPixel(319, 239, YELLOW);
   }
 
@@ -150,7 +153,7 @@ int main(void)
   Display_DrawLine_Horizontal(100, 150, 100, GREEN);
 
 
-  Display_Write_String(100, 80, "ver. 0.3.0", BLACK, GREEN, 2);
+  Display_Write_String(50, 80, "ver. 0.3.1 beta", BLACK, GREEN, 2);
 
   GPS_Module_StartReceive();
   /* USER CODE END 2 */

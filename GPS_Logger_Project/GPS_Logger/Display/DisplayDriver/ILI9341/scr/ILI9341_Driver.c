@@ -1,7 +1,6 @@
-#include "STM32F4_Driver.h"
+#include <ILI9341_Driver.h>
 
 uint16_t DataBuffer[19200] = {0};
-
 
 
 //Функция отправки команды дисплею

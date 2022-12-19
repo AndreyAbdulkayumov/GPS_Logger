@@ -1,32 +1,26 @@
-//Увеличение пикселя происходит вправо - вверх
+//Увеличение пикселя происходит вправо и вверх
 //Дисплей:
-//    * - контакты управления, если дисплей повернут стороной экрана
-/*   Y <-------------------------------------------------------- 0
-                                                               |
-                                                               |
-                                                               |
-*                           _______________                    |
-*                          |               |                   |
-*                          |               |                   |
-*                          | ______        |                   |
-*                          |      |        |                   |
-                           |      |        |                   |
-                           |_____ | _______|                   |
-                                                               |
-                                                               |
-                                                               |
+//
+/*   0  --------------------------------------------------------> X
+		|
+		|
+		|
+		|
+		|
+		|
+		|
+		|
+		|
 
-                                                               X
-
-
-
+		Y
 
 */
 
 #include "Graphics.h"
-#include "STM32F4_Driver.h"
+#include "ILI9341_Driver.h"
 
 DisplayOrientation CurrentOrientation = Portrait;
+
 
 void Display_SetOrientation(DisplayOrientation Orientation)
 {
@@ -52,6 +46,7 @@ void Display_SetOrientation(DisplayOrientation Orientation)
 	CurrentOrientation = Orientation;
 }
 
+
 void Display_SetCursorPosition(uint16_t x, uint16_t y)
 {
 	SendCommand(LCD_COLUMN_ADDR);
@@ -72,6 +67,7 @@ void Display_SetCursorPosition(uint16_t x, uint16_t y)
 	SendData(DataBuffer, 4);
 }
 
+
 void Display_DrawPixel(uint16_t x, uint16_t y, uint16_t Color)
 {
 	Display_SetCursorPosition(x, y);
@@ -82,6 +78,7 @@ void Display_DrawPixel(uint16_t x, uint16_t y, uint16_t Color)
 	SendData(DataBuffer, 1);
 }
 
+
 void Display_DrawLine_Vertical(uint16_t x0, uint16_t y0, uint16_t Length, uint16_t Color)
 {
 	for (uint16_t PixelCounter = 0; PixelCounter < Length; PixelCounter++)
@@ -90,6 +87,7 @@ void Display_DrawLine_Vertical(uint16_t x0, uint16_t y0, uint16_t Length, uint16
 	}
 }
 
+
 void Display_DrawLine_Horizontal(uint16_t x0, uint16_t y0, uint16_t Length, uint16_t Color)
 {
 	for (uint16_t PixelCounter = 0; PixelCounter < Length; PixelCounter++)
@@ -97,6 +95,7 @@ void Display_DrawLine_Horizontal(uint16_t x0, uint16_t y0, uint16_t Length, uint
 		Display_DrawPixel(x0 + PixelCounter, y0, Color);
 	}
 }
+
 
 //Заливка экрана попиксельно
 void Display_FillScreen(uint16_t color)
@@ -126,6 +125,7 @@ void Display_FillScreen(uint16_t color)
 	}
 }
 
+
 void Display_DrawRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
 {
 	uint16_t counter;  //Переменная счетчик для вывода пикселей
@@ -147,49 +147,12 @@ void Display_DrawRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16
 	}
 }
 
-void Display_DrawFillRect(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
+
+void Display_DrawFillPixel(int16_t x, int16_t y, uint16_t size, uint16_t color)
 {
-/*
-	SendCmd(LCD_COLUMN_ADDR);
-	SendData(x1 >> 8);
-	SendData(x1 & 0xff);
-	SendData(x2 >> 8);
-	SendData(x2 & 0xff);
-
-	SendCmd(LCD_PAGE_ADDR);
-	SendData(y1 >> 8);
-	SendData(y1 & 0xff);
-	SendData(y2 >> 8);
-	SendData(y2 & 0xff);
-
-	int n = (x2 - x1) * (y2 - y1);
-
-	SendCmd(LCD_GRAM);
-
-	for (int i = 0; i < n; i++) {
-		SendData(color >> 8);
-		SendData(color & 0xFF);
-	}
-	*/
-}
-
-void Display_DrawFillPixel(uint16_t x, uint16_t y, uint16_t size, uint16_t color)
-{
-	if (CurrentOrientation == Portrait)
-	{
-		//Display_SetWindow(0, 0, 239, 319);
-		Display_SetWindow(x - size, y - size, x, y);
-	}
-
-	else
-	{
-		//Display_SetWindow(0, 0, 319, 239);
-		Display_SetWindow(x, y, x + size, y - size);
-	}
-
-
+	Display_SetWindow(x, y - size, x + size, y);
 	
-	int n = (x - (x - size) + 1) * (y - (y - size) + 1);
+	int n = ((x + size) - x + 1) * ((y + size) - y + 1);
 
 	SendCommand(LCD_GRAM);
 	
@@ -201,7 +164,8 @@ void Display_DrawFillPixel(uint16_t x, uint16_t y, uint16_t size, uint16_t color
 	SendData(DataBuffer, n);
 }
 
-void Display_SetWindow(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+
+void Display_SetWindow(int16_t x0, int16_t y0, int16_t x1, int16_t y1)
 {
 	SendCommand(LCD_COLUMN_ADDR);
 	

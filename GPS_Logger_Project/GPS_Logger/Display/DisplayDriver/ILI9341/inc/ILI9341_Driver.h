@@ -15,5 +15,5 @@
 
 extern uint16_t DataBuffer[];
 
-void SendCommand(uint16_t Command);    //Функция отправки команды
-void SendData(uint16_t* Data, uint16_t DataSize);  //Функция отправки данных
+void SendCommand(uint16_t Command);
+void SendData(uint16_t* Data, uint16_t DataSize);
