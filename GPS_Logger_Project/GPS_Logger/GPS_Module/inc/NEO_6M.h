@@ -9,3 +9,4 @@ void GPS_Module_Init(
 		Logging_Status (*CallbackAction) (char* String, uint32_t StringSize)
 		);
 void GPS_Module_StartReceive(void);
+void GPS_Module_StopReceive(void);

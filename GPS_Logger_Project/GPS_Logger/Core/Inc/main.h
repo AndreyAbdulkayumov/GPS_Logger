@@ -57,6 +57,12 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define Start___Stop_polling_Pin GPIO_PIN_3
+#define Start___Stop_polling_GPIO_Port GPIOE
+#define LED_2_debug_Pin GPIO_PIN_6
+#define LED_2_debug_GPIO_Port GPIOA
+#define LED_3_debug_Pin GPIO_PIN_7
+#define LED_3_debug_GPIO_Port GPIOA
 #define ILI9341_Backlight_Control_Pin GPIO_PIN_1
 #define ILI9341_Backlight_Control_GPIO_Port GPIOB
 #define Touch_Controller_CS_Pin GPIO_PIN_12
