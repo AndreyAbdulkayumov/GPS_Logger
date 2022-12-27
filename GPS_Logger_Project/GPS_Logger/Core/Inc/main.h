@@ -57,8 +57,9 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Start___Stop_polling_Pin GPIO_PIN_3
-#define Start___Stop_polling_GPIO_Port GPIOE
+#define Start___Stop_Polling_Pin GPIO_PIN_3
+#define Start___Stop_Polling_GPIO_Port GPIOE
+#define Start___Stop_Polling_EXTI_IRQn EXTI3_IRQn
 #define LED_2_debug_Pin GPIO_PIN_6
 #define LED_2_debug_GPIO_Port GPIOA
 #define LED_3_debug_Pin GPIO_PIN_7

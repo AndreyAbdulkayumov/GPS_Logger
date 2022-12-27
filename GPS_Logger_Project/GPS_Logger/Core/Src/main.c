@@ -26,8 +26,6 @@
 #include "XPT2046.h"
 #include "NEO_6M.h"
 #include "Logging.h"
-
-#include <stdio.h>  // Для printf
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,12 +35,6 @@ typedef enum
 	Wait,
 	Work
 } SystemStatus;
-
-typedef enum
-{
-	Button_Up,
-	Button_Down
-} ButtonStatus;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -56,6 +48,8 @@ typedef enum
 
 /* Private variables ---------------------------------------------------------*/
 SD_HandleTypeDef hsd;
+DMA_HandleTypeDef hdma_sdio_tx;
+DMA_HandleTypeDef hdma_sdio_rx;
 
 SPI_HandleTypeDef hspi2;
 
@@ -66,12 +60,14 @@ SRAM_HandleTypeDef hsram1;
 /* USER CODE BEGIN PV */
 SystemStatus CurrentSystemStatus = Wait;
 
-ButtonStatus PollingControl_ButtonStatus = Button_Up;
+uint8_t ButtonIsPressed = 0;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
 static void MX_FSMC_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_UART4_Init(void);
@@ -83,6 +79,75 @@ static void MX_SDIO_SD_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+// Функция используется в файле  ол  ++stm32f4xx_it.c в функции EXTI3_IRQHandler(void)
+void Start_Stop_Polling_IRQHandler()
+{
+	if (CurrentSystemStatus == Wait)
+	{
+		CurrentSystemStatus = Work;
+		GPIOA->ODR &= ~(1 << 6);
+	}
+
+	else
+	{
+		CurrentSystemStatus = Wait;
+		GPIOA->ODR |= 1 << 6;
+	}
+
+	switch (CurrentSystemStatus)
+	{
+	case Wait:
+		Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
+		GPS_Module_StopReceive();
+		break;
+
+	case Work:
+		Display_Write_String(50, 120, "GPS Work", BLACK, GREEN, 2);
+		GPS_Module_StartReceive();
+		break;
+	}
+
+	/*
+	if (ButtonIsPressed == 0)
+	{
+		if (CurrentSystemStatus == Wait)
+		{
+			CurrentSystemStatus = Work;
+			GPIOA->ODR &= ~(1 << 6);
+		}
+
+		else
+		{
+			CurrentSystemStatus = Wait;
+			GPIOA->ODR |= 1 << 6;
+		}
+
+		ButtonIsPressed = 1;
+	}
+	*/
+}
+
+void Start_Stop_Polling()
+{
+	switch (CurrentSystemStatus)
+	{
+	case Wait:
+		// Для защиты от дребезга контактов и многократного нажатия.
+		HAL_Delay(100);
+		Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
+		GPS_Module_StopReceive();
+		break;
+
+	case Work:
+		Display_Write_String(50, 120, "GPS Work", BLACK, GREEN, 2);
+		GPS_Module_StartReceive();
+		// Для защиты от дребезга контактов и многократного нажатия.
+		HAL_Delay(100);
+		break;
+	}
+
+	ButtonIsPressed = 0;
+}
 /* USER CODE END 0 */
 
 /**
@@ -113,6 +178,7 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_FSMC_Init();
   MX_SPI2_Init();
   MX_UART4_Init();
@@ -135,7 +201,7 @@ int main(void)
 
   Display_Write_String(200, 100, "12345", BLACK, GREEN, 1);
 
-  if (Logging_Init(SD_Card, "GPS.txt") != Logging_OK)
+  if (Logging_Init(SD_Card, "GPS.log") != Logging_OK)
   {
 	  Display_Write_String(100, 40, "Log not init", BLACK, GREEN, 2);
 	  GPS_Module_Init(&huart4, NULL);
@@ -170,37 +236,9 @@ int main(void)
   Display_DrawLine_Horizontal(100, 150, 100, GREEN);
 
 
-  Display_Write_String(50, 80, "ver. 0.5.0", BLACK, GREEN, 2);
+  Display_Write_String(50, 80, "ver. 1.0.0 beta", BLACK, GREEN, 2);
 
   Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
-
-
-  /*
-  char* Buffer = "qw,we,12,23,67";
-
-  char str [24]="test1/test2/test3/test4";
-
-  char* Line = NULL;
-  char* Save = NULL;
-
-  char* Part = NULL;
-
-  Line = strtok_r(str, "/", &Save);
-
-  while(Line != NULL)
-  {
-	  printf ("%s\n", Line);
-	  Line = strtok_r(NULL, "/", &Save);
-  }
-  */
-  /*
-  Line = strtok(Buffer, ",");
-
-  for (int i = 0; i < 5; i++)
-  {
-	  Line = strtok(NULL, ",");
-  }
-  */
 
   /* USER CODE END 2 */
 
@@ -212,41 +250,12 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  if ((GPIOE->IDR & (1 << 3)) == 0 &&
-			  PollingControl_ButtonStatus != Button_Down)
+	  /*
+	  if (ButtonIsPressed > 0)
 	  {
-		  PollingControl_ButtonStatus = Button_Down;
-		  GPIOA->ODR &= ~(1 << 6);
-
-		  if (CurrentSystemStatus == Wait)
-		  {
-			  CurrentSystemStatus = Work;
-		  }
-
-		  else
-		  {
-			  CurrentSystemStatus = Wait;
-		  }
-
-		  switch (CurrentSystemStatus)
-		  {
-		  case Wait:
-			  Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
-			  GPS_Module_StopReceive();
-			  break;
-
-		  case Work:
-			  Display_Write_String(50, 120, "GPS Work", BLACK, GREEN, 2);
-			  GPS_Module_StartReceive();
-			  break;
-		  }
+		  Start_Stop_Polling();
 	  }
-
-	  else if ((GPIOE->IDR & (1 << 3)) != 0)
-	  {
-		  PollingControl_ButtonStatus = Button_Up;
-		  GPIOA->ODR |= 1 << 6;
-	  }
+	  */
   }
   /* USER CODE END 3 */
 }
@@ -396,6 +405,25 @@ static void MX_UART4_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA2_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA2_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream3_IRQn);
+  /* DMA2_Stream6_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream6_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream6_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -418,11 +446,11 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, ILI9341_Backlight_Control_Pin|Touch_Controller_CS_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pin : Start___Stop_polling_Pin */
-  GPIO_InitStruct.Pin = Start___Stop_polling_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  /*Configure GPIO pin : Start___Stop_Polling_Pin */
+  GPIO_InitStruct.Pin = Start___Stop_Polling_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(Start___Stop_polling_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(Start___Stop_Polling_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : LED_2_debug_Pin LED_3_debug_Pin */
   GPIO_InitStruct.Pin = LED_2_debug_Pin|LED_3_debug_Pin;
@@ -444,6 +472,10 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
   HAL_GPIO_Init(Touch_Controller_CS_GPIO_Port, &GPIO_InitStruct);
+
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
 }
 
