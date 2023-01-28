@@ -213,8 +213,6 @@ void EXTI3_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(Start___Stop_Polling_Pin);
   /* USER CODE BEGIN EXTI3_IRQn 1 */
 
-  Start_Stop_Polling_IRQHandler();
-
   /* USER CODE END EXTI3_IRQn 1 */
 }
 

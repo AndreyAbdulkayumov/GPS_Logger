@@ -61,7 +61,6 @@ SRAM_HandleTypeDef hsram1;
 SystemStatus CurrentSystemStatus = Wait;
 
 uint8_t ButtonIsPressed = 0;
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -79,74 +78,12 @@ static void MX_SDIO_SD_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-// Функция используется в файле  ол  ++stm32f4xx_it.c в функции EXTI3_IRQHandler(void)
-void Start_Stop_Polling_IRQHandler()
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-	if (CurrentSystemStatus == Wait)
+	if (GPIO_Pin == GPIO_PIN_3)
 	{
-		CurrentSystemStatus = Work;
-		GPIOA->ODR &= ~(1 << 6);
-	}
-
-	else
-	{
-		CurrentSystemStatus = Wait;
-		GPIOA->ODR |= 1 << 6;
-	}
-
-	switch (CurrentSystemStatus)
-	{
-	case Wait:
-		Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
-		GPS_Module_StopReceive();
-		break;
-
-	case Work:
-		Display_Write_String(50, 120, "GPS Work", BLACK, GREEN, 2);
-		GPS_Module_StartReceive();
-		break;
-	}
-
-	/*
-	if (ButtonIsPressed == 0)
-	{
-		if (CurrentSystemStatus == Wait)
-		{
-			CurrentSystemStatus = Work;
-			GPIOA->ODR &= ~(1 << 6);
-		}
-
-		else
-		{
-			CurrentSystemStatus = Wait;
-			GPIOA->ODR |= 1 << 6;
-		}
-
 		ButtonIsPressed = 1;
 	}
-	*/
-}
-
-void Start_Stop_Polling()
-{
-	switch (CurrentSystemStatus)
-	{
-	case Wait:
-		// Для защиты от дребезга контактов и многократного нажатия.
-		HAL_Delay(100);
-		Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
-		GPS_Module_StopReceive();
-		break;
-
-	case Work:
-		Display_Write_String(50, 120, "GPS Work", BLACK, GREEN, 2);
-		GPS_Module_StartReceive();
-		// Для защиты от дребезга контактов и многократного нажатия.
-		HAL_Delay(100);
-		break;
-	}
-
-	ButtonIsPressed = 0;
 }
 /* USER CODE END 0 */
 
@@ -186,6 +123,7 @@ int main(void)
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
 
+  // Отключение светодиодов D2 и D3 на плате
   GPIOA->ODR |= 1 << 6;
   GPIOA->ODR |= 1 << 7;
 
@@ -236,7 +174,7 @@ int main(void)
   Display_DrawLine_Horizontal(100, 150, 100, GREEN);
 
 
-  Display_Write_String(50, 80, "ver. 1.0.0 beta", BLACK, GREEN, 2);
+  Display_Write_String(50, 80, "ver. 0.6.1", BLACK, GREEN, 2);
 
   Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
 
@@ -249,13 +187,38 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-
-	  /*
 	  if (ButtonIsPressed > 0)
 	  {
-		  Start_Stop_Polling();
+		  if (CurrentSystemStatus == Wait)
+		  {
+			  CurrentSystemStatus = Work;
+			  GPIOA->ODR &= ~(1 << 6);
+		  }
+
+		  else
+		  {
+			  CurrentSystemStatus = Wait;
+			  GPIOA->ODR |= 1 << 6;
+		  }
+
+		  switch (CurrentSystemStatus)
+		  {
+		  case Wait:
+			  Display_Write_String(50, 120, "GPS Wait", BLACK, GREEN, 2);
+			  GPS_Module_StopReceive();
+			  break;
+
+		  case Work:
+			  Display_Write_String(50, 120, "GPS Work", BLACK, GREEN, 2);
+			  GPS_Module_StartReceive();
+			  break;
+		  }
+
+		  // Для защиты от дребезга контактов и многократного нажатия.
+		  HAL_Delay(100);
+
+		  ButtonIsPressed = 0;
 	  }
-	  */
   }
   /* USER CODE END 3 */
 }
