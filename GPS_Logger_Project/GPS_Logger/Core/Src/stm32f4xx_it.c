@@ -88,6 +88,10 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
+	GPIOA->ODR &= ~(1 << 7);
+
+	Display_FillScreen(BLACK);
+	Display_Write_String(50, 80, "CPU Hard Fault", BLACK, GREEN, 2);
 
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
